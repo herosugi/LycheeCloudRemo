@@ -6,59 +6,33 @@
 ESP32Interface wifi(P5_3, P3_14, P7_1, P0_1);
 Serial pc(USBTX, USBRX);
 
+DigitalOut led1(LED1);
+
 /* List of trusted root CA certificates
- * currently two: GlobalSign, the CA for developer.mbed.org and Let's Encrypt, the CA for httpbin.org
+ * This is the root CA for Google from GeoTrustGlobalCA
  *
  * To add more root certificates, just concatenate them.
  */
 const char SSL_CA_PEM[] = "-----BEGIN CERTIFICATE-----\n"
-    "MIIDdTCCAl2gAwIBAgILBAAAAAABFUtaw5QwDQYJKoZIhvcNAQEFBQAwVzELMAkG\n"
-    "A1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNVBAsTB1Jv\n"
-    "b3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw05ODA5MDExMjAw\n"
-    "MDBaFw0yODAxMjgxMjAwMDBaMFcxCzAJBgNVBAYTAkJFMRkwFwYDVQQKExBHbG9i\n"
-    "YWxTaWduIG52LXNhMRAwDgYDVQQLEwdSb290IENBMRswGQYDVQQDExJHbG9iYWxT\n"
-    "aWduIFJvb3QgQ0EwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDaDuaZ\n"
-    "jc6j40+Kfvvxi4Mla+pIH/EqsLmVEQS98GPR4mdmzxzdzxtIK+6NiY6arymAZavp\n"
-    "xy0Sy6scTHAHoT0KMM0VjU/43dSMUBUc71DuxC73/OlS8pF94G3VNTCOXkNz8kHp\n"
-    "1Wrjsok6Vjk4bwY8iGlbKk3Fp1S4bInMm/k8yuX9ifUSPJJ4ltbcdG6TRGHRjcdG\n"
-    "snUOhugZitVtbNV4FpWi6cgKOOvyJBNPc1STE4U6G7weNLWLBYy5d4ux2x8gkasJ\n"
-    "U26Qzns3dLlwR5EiUWMWea6xrkEmCMgZK9FGqkjWZCrXgzT/LCrBbBlDSgeF59N8\n"
-    "9iFo7+ryUp9/k5DPAgMBAAGjQjBAMA4GA1UdDwEB/wQEAwIBBjAPBgNVHRMBAf8E\n"
-    "BTADAQH/MB0GA1UdDgQWBBRge2YaRQ2XyolQL30EzTSo//z9SzANBgkqhkiG9w0B\n"
-    "AQUFAAOCAQEA1nPnfE920I2/7LqivjTFKDK1fPxsnCwrvQmeU79rXqoRSLblCKOz\n"
-    "yj1hTdNGCbM+w6DjY1Ub8rrvrTnhQ7k4o+YviiY776BQVvnGCv04zcQLcFGUl5gE\n"
-    "38NflNUVyRRBnMRddWQVDf9VMOyGj/8N7yy5Y0b2qvzfvGn9LhJIZJrglfCm7ymP\n"
-    "AbEVtQwdpf5pLGkkeB6zpxxxYu7KyJesF12KwvhHhm4qxFYxldBniYUr+WymXUad\n"
-    "DKqC5JlR3XC321Y9YeRq4VzW9v493kHMB65jUr9TU/Qr6cf9tveCX4XSQRjbgbME\n"
-    "HMUfpIBvFSDJ3gyICh3WZlXi/EjJKSZp4A==\n"
-    "-----END CERTIFICATE-----\n"
-    "-----BEGIN CERTIFICATE-----\n"
-    "MIIEkjCCA3qgAwIBAgIQCgFBQgAAAVOFc2oLheynCDANBgkqhkiG9w0BAQsFADA/\n"
-    "MSQwIgYDVQQKExtEaWdpdGFsIFNpZ25hdHVyZSBUcnVzdCBDby4xFzAVBgNVBAMT\n"
-    "DkRTVCBSb290IENBIFgzMB4XDTE2MDMxNzE2NDA0NloXDTIxMDMxNzE2NDA0Nlow\n"
-    "SjELMAkGA1UEBhMCVVMxFjAUBgNVBAoTDUxldCdzIEVuY3J5cHQxIzAhBgNVBAMT\n"
-    "GkxldCdzIEVuY3J5cHQgQXV0aG9yaXR5IFgzMIIBIjANBgkqhkiG9w0BAQEFAAOC\n"
-    "AQ8AMIIBCgKCAQEAnNMM8FrlLke3cl03g7NoYzDq1zUmGSXhvb418XCSL7e4S0EF\n"
-    "q6meNQhY7LEqxGiHC6PjdeTm86dicbp5gWAf15Gan/PQeGdxyGkOlZHP/uaZ6WA8\n"
-    "SMx+yk13EiSdRxta67nsHjcAHJyse6cF6s5K671B5TaYucv9bTyWaN8jKkKQDIZ0\n"
-    "Z8h/pZq4UmEUEz9l6YKHy9v6Dlb2honzhT+Xhq+w3Brvaw2VFn3EK6BlspkENnWA\n"
-    "a6xK8xuQSXgvopZPKiAlKQTGdMDQMc2PMTiVFrqoM7hD8bEfwzB/onkxEz0tNvjj\n"
-    "/PIzark5McWvxI0NHWQWM6r6hCm21AvA2H3DkwIDAQABo4IBfTCCAXkwEgYDVR0T\n"
-    "AQH/BAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAYYwfwYIKwYBBQUHAQEEczBxMDIG\n"
-    "CCsGAQUFBzABhiZodHRwOi8vaXNyZy50cnVzdGlkLm9jc3AuaWRlbnRydXN0LmNv\n"
-    "bTA7BggrBgEFBQcwAoYvaHR0cDovL2FwcHMuaWRlbnRydXN0LmNvbS9yb290cy9k\n"
-    "c3Ryb290Y2F4My5wN2MwHwYDVR0jBBgwFoAUxKexpHsscfrb4UuQdf/EFWCFiRAw\n"
-    "VAYDVR0gBE0wSzAIBgZngQwBAgEwPwYLKwYBBAGC3xMBAQEwMDAuBggrBgEFBQcC\n"
-    "ARYiaHR0cDovL2Nwcy5yb290LXgxLmxldHNlbmNyeXB0Lm9yZzA8BgNVHR8ENTAz\n"
-    "MDGgL6AthitodHRwOi8vY3JsLmlkZW50cnVzdC5jb20vRFNUUk9PVENBWDNDUkwu\n"
-    "Y3JsMB0GA1UdDgQWBBSoSmpjBH3duubRObemRWXv86jsoTANBgkqhkiG9w0BAQsF\n"
-    "AAOCAQEA3TPXEfNjWDjdGBX7CVW+dla5cEilaUcne8IkCJLxWh9KEik3JHRRHGJo\n"
-    "uM2VcGfl96S8TihRzZvoroed6ti6WqEBmtzw3Wodatg+VyOeph4EYpr/1wXKtx8/\n"
-    "wApIvJSwtmVi4MFU5aMqrSDE6ea73Mj2tcMyo5jMd6jmeWUHK8so/joWUoHOUgwu\n"
-    "X4Po1QYz+3dszkDqMp4fklxBwXRsW10KXzPMTZ+sOPAveyxindmjkW8lGy+QsRlG\n"
-    "PfZ+G6Z6h7mjem0Y+iWlkYcV4PIWL1iwBi8saCbGS5jN2p8M+X+Q7UNKEkROb3N6\n"
-    "KOqkqm57TH2H3eDJAkSnh6/DNFu0Qg==\n"
-    "-----END CERTIFICATE-----\n";
+    "MIIDVDCCAjygAwIBAgIDAjRWMA0GCSqGSIb3DQEBBQUAMEIxCzAJBgNVBAYTAlVT\n"
+    "MRYwFAYDVQQKEw1HZW9UcnVzdCBJbmMuMRswGQYDVQQDExJHZW9UcnVzdCBHbG9i\n"
+    "YWwgQ0EwHhcNMDIwNTIxMDQwMDAwWhcNMjIwNTIxMDQwMDAwWjBCMQswCQYDVQQG\n"
+    "EwJVUzEWMBQGA1UEChMNR2VvVHJ1c3QgSW5jLjEbMBkGA1UEAxMSR2VvVHJ1c3Qg\n"
+    "R2xvYmFsIENBMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA2swYYzD9\n"
+    "9BcjGlZ+W988bDjkcbd4kdS8odhM+KhDtgPpTSEHCIjaWC9mOSm9BXiLnTjoBbdq\n"
+    "fnGk5sRgprDvgOSJKA+eJdbtg/OtppHHmMlCGDUUna2YRpIuT8rxh0PBFpVXLVDv\n"
+    "iS2Aelet8u5fa9IAjbkU+BQVNdnARqN7csiRv8lVK83Qlz6cJmTM386DGXHKTubU\n"
+    "1XupGc1V3sjs0l44U+VcT4wt/lAjNvxm5suOpDkZALeVAjmRCw7+OC7RHQWa9k0+\n"
+    "bw8HHa8sHo9gOeL6NlMTOdReJivbPagUvTLrGAMoUgRx5aszPeE4uwc2hGKceeoW\n"
+    "MPRfwCvocWvk+QIDAQABo1MwUTAPBgNVHRMBAf8EBTADAQH/MB0GA1UdDgQWBBTA\n"
+    "ephojYn7qwVkDBF9qn1luMrMTjAfBgNVHSMEGDAWgBTAephojYn7qwVkDBF9qn1l\n"
+    "uMrMTjANBgkqhkiG9w0BAQUFAAOCAQEANeMpauUvXVSOKVCUn5kaFOSPeCpilKIn\n"
+    "Z57QzxpeR+nBsqTP3UEaBU6bS+5Kb1VSsyShNwrrZHYqLizz/Tt1kL/6cdjHPTfS\n"
+    "tQWVYrmm3ok9Nns4d0iXrKYgjy6myQzCsplFAMfOEVEiIuCl6rYVSAlk6l5PdPcF\n"
+    "PseKUgzbFbS9bZvlxrFUaKnjaZC2mqUPuLk/IH2uSrW4nOQdtqvmlKXBx4Ot2/Un\n"
+    "hw4EbNX/3aBd7YdStysVAq45pmp06drE57xNNB6pXE0zX5IJL4hmXXeXxx12E6nV\n"
+    "5fEWCRE11azbJHFwLJhWC9kXtNHjUStedejV0NxPNO3CBWaAocvmMw==\n"
+    "-----END CERTIFICATE-----";
 
 void dump_response(HttpResponse* res) {
     mbedtls_printf("Status: %d - %s\n", res->get_status_code(), res->get_status_message().c_str());
@@ -70,60 +44,69 @@ void dump_response(HttpResponse* res) {
     mbedtls_printf("\nBody (%d bytes):\n\n%s\n", res->get_body_length(), res->get_body_as_string().c_str());
 }
 
+void halt() {
+    // 異常終了した場合、LED1を高速で点滅する
+    while (1) {
+        led1 = !led1;
+        Thread::wait(100);
+    }
+}
+
 int main() {
+    DigitalOut output_pin(D13);     // 制御を行うピン番号
+
+    string previous_command = "";   // 前回のコマンド
+
     pc.baud(115200);
 
-    printf("\nConnecting...\n");
+    printf("Connecting...\r\n");
     int ret = wifi.connect(MBED_CONF_APP_WIFI_SSID, MBED_CONF_APP_WIFI_PASSWORD, NSAPI_SECURITY_WPA_WPA2);
     if (ret != 0) {
-        printf("\nConnection error\n");
-        return -1;
+        printf("Connection error\r\n");
+        halt();
     }
-    printf("Success\n\n");
-    printf("MAC: %s\n", wifi.get_mac_address());
-    printf("IP: %s\n", wifi.get_ip_address());
-    printf("Netmask: %s\n", wifi.get_netmask());
-    printf("Gateway: %s\n", wifi.get_gateway());
-    printf("RSSI: %d\n\n", wifi.get_rssi());
+    printf("Success\r\n\r\n");
+    printf("MAC: %s\r\n", wifi.get_mac_address());
+    printf("IP: %s\r\n", wifi.get_ip_address());
+    printf("Netmask: %s\r\n", wifi.get_netmask());
+    printf("Gateway: %s\r\n", wifi.get_gateway());
+    printf("RSSI: %d\r\n\r\n", wifi.get_rssi());
 
-    // GET request to developer.mbed.org
-    {
-        printf("\n----- HTTPS GET request -----\n");
+    while (1) {
+        {
+            // printf("\r\n----- HTTPS GET request -----\r\n");
+            HttpsRequest* get_req = new HttpsRequest(&wifi, SSL_CA_PEM, HTTP_GET, MBED_CONF_APP_SERVER_URL);
+            // get_req->set_debug(true);
 
-        HttpsRequest* get_req = new HttpsRequest(&wifi, SSL_CA_PEM, HTTP_GET, "https://os.mbed.com/media/uploads/mbed_official/hello.txt");
-        get_req->set_debug(true);
+            HttpResponse* get_res = get_req->send();
+            if (!get_res) {
+                printf("HttpRequest failed (error code %d)\r\n", get_req->get_error());
+                Thread::wait(30000);
+            }
 
-        HttpResponse* get_res = get_req->send();
-        if (!get_res) {
-            printf("HttpRequest failed (error code %d)\n", get_req->get_error());
-            return 1;
+            // printf("\r\n----- HTTPS GET response -----\r\n");
+            // dump_response(get_res);
+
+            // コマンドの解析
+            string command = get_res->get_body_as_string();
+            if (previous_command != command) {
+                mbedtls_printf("%s\r\n", command.c_str());
+
+                if (command.find("ON") != string::npos) {
+                    output_pin = 1;
+                }
+                else if (command.find("OFF") != string::npos) {
+                    output_pin = 0;
+                }
+
+                previous_command = command;
+            }
+
+            delete get_req;
         }
-        printf("\n----- HTTPS GET response -----\n");
-        dump_response(get_res);
 
-        delete get_req;
-    }
-
-    // POST request to httpbin.org
-    {
-        printf("\n----- HTTPS POST request -----\n");
-
-        HttpsRequest* post_req = new HttpsRequest(&wifi, SSL_CA_PEM, HTTP_POST, "https://httpbin.org/post");
-        post_req->set_debug(true);
-        post_req->set_header("Content-Type", "application/json");
-
-        const char body[] = "{\"hello\":\"world\"}";
-
-        HttpResponse* post_res = post_req->send(body, strlen(body));
-        if (!post_res) {
-            printf("HttpRequest failed (error code %d)\n", post_req->get_error());
-            return 1;
-        }
-
-        printf("\n----- HTTPS POST response -----\n");
-        dump_response(post_res);
-
-        delete post_req;
+        led1 = !led1;
+        Thread::wait(500);
     }
 
     Thread::wait(osWaitForever);

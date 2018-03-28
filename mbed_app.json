@@ -4,7 +4,10 @@
             "value": "\"SSID\""
         },
         "wifi-password": {
-            "value": "\"Password\""
+            "value": "\"PASS\""
+        },
+        "server-url": {
+            "value": "\"https://xxxx-cloudremo.firebaseio.com/word.json?auth=aaaaaaa\""
         }
     },
     "macros": ["MBEDTLS_USER_CONFIG_FILE=\"mbedtls_entropy_config.h\""],
